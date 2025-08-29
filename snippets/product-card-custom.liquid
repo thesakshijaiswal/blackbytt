@@ -8,13 +8,25 @@
     assign is_on_sale = true
   endif
 
-  assign has_low_stock = '{{variant.inventory_management and variant.inventory_quantity > 0 and variant.inventory_quantity < 5}}'
-
-  assign is_new = 'now' | date: '%s' | minus: product.published_at | date: '%s' | divided_by: 86400
-  assign is_new = '{{is_new <= 30}}'
   assign first_media = product.featured_media
   assign second_media = product.media[1]
 -%}
+
+{%- assign has_low_stock = false -%}
+{%- if variant.inventory_management and variant.inventory_quantity > 0 and variant.inventory_quantity < 5 -%}
+  {%- assign has_low_stock = true -%}
+{%- endif -%}
+
+{%- liquid
+  assign now_timestamp = 'now' | date: '%s'
+  assign published_timestamp = product.published_at | date: '%s'
+  assign diff_days = now_timestamp | minus: published_timestamp | divided_by: 86400
+-%}
+
+{%- assign is_new = false -%}
+{%- if diff_days <= 30 -%}
+  {%- assign is_new = true -%}
+{%- endif -%}
 
 <div class="pcard">
   <a href="{{ product.url }}" class="pcard__image-wrap">
