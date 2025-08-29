@@ -1,0 +1,72 @@
+{%- liquid
+  assign variant = product.selected_or_first_available_variant
+
+  assign is_on_sale = false
+  if variant and variant.compare_at_price > variant.price
+    assign is_on_sale = true
+  elsif product.compare_at_price_max > product.price_max
+    assign is_on_sale = true
+  endif
+
+  assign has_low_stock = variant.inventory_management and variant.inventory_quantity > 0 and variant.inventory_quantity < 5
+
+  assign is_new = 'now' | date: '%s' | minus: product.published_at | date: '%s' | divided_by: 86400
+  assign is_new = is_new <= 30
+  assign first_media = product.featured_media
+  assign second_media = product.media[1]
+-%}
+
+<div class="pcard">
+  <a href="{{ product.url }}" class="pcard__image-wrap">
+    {%- if first_media -%}
+      {{ first_media | image_url: width: 720 | image_tag: alt: first_media.alt, class: 'pcard__image' }}
+    {%- endif -%}
+
+    {%- if second_media -%}
+      {{
+        second_media
+        | image_url: width: 720
+        | image_tag: alt: second_media.alt, class: 'pcard__image pcard__image-hover'
+      }}
+    {%- endif -%}
+
+    <div class="pcard__badges">
+      {%- if is_on_sale -%}
+        <span class="badge badge--sale">Sale</span>
+      {%- endif -%}
+      {%- if has_low_stock -%}
+        <span class="badge badge--low">Low stock</span>
+      {%- endif -%}
+      {%- if is_new -%}
+        <span class="badge badge--new">New</span>
+      {%- endif -%}
+    </div>
+
+    <div class="pcard__overlay" aria-hidden="true">
+      <span class="pcard__quickview">Quick View</span>
+    </div>
+  </a>
+
+  {%- if show_title -%}
+    <h3 class="pcard__title">
+      <a href="{{ product.url }}">{{ product.title }}</a>
+    </h3>
+  {%- endif -%}
+
+  <div class="pcard__price">
+    {%- assign price_to_show = variant.price | default: product.price -%}
+    {%- if is_on_sale -%}
+      <span class="pcard__price-current">{{ price_to_show | money }}</span>
+      <s class="pcard__price-compare">
+        {{ variant.compare_at_price | default: product.compare_at_price_max | money }}
+      </s>
+    {%- else -%}
+      <span class="pcard__price-current">{{ price_to_show | money }}</span>
+    {%- endif -%}
+  </div>
+
+  <form method="post" action="{{ routes.cart_add_url }}" class="pcard__form">
+    <input type="hidden" name="id" value="{{ variant.id }}">
+    <button type="submit" class="pcard__add">Add to cart</button>
+  </form>
+</div>
